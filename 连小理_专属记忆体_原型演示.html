@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连小理·专属记忆体 - 功能原型演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .logo {
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: bold;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header .subtitle { font-size: 12px; opacity: 0.85; }
+        .header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+        .badge {
+            background: rgba(255,255,255,0.25);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            background: #34a853;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        /* 主体布局 */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 左侧记忆体面板 */
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+        .sidebar-header h3 {
+            font-size: 14px;
+            color: #1a73e8;
+            margin-bottom: 4px;
+        }
+        .sidebar-header p { font-size: 12px; color: #888; }
+
+        .memory-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .memory-section {
+            margin-bottom: 16px;
+        }
+        .memory-section-title {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            padding-left: 8px;
+            border-left: 3px solid #1a73e8;
+        }
+
+        .memory-item {
+            background: #f8f9ff;
+            border: 1px solid #e8eaf6;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .memory-item .icon {
+            color: #1a73e8;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .memory-item .text { flex: 1; }
+        .memory-item .label { font-weight: 600; color: #444; }
+        .memory-item .value { color: #666; }
+
+        .memory-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+        .stat-box {
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #e8e8e8;
+        }
+        .stat-box .num { font-size: 20px; font-weight: bold; color: #1a73e8; }
+        .stat-box .lbl { font-size: 11px; color: #888; margin-top: 2px; }
+
+        /* 中间聊天区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .chat-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fafafa;
+        }
+        .chat-header .avatar {
+            width: 32px; height: 32px;
+            background: #1a73e8;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 14px; font-weight: bold;
+        }
+        .chat-header .info h4 { font-size: 14px; }
+        .chat-header .info span { font-size: 12px; color: #34a853; }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message .msg-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold;
+            flex-shrink: 0;
+        }
+        .message.bot .msg-avatar { background: #1a73e8; color: white; }
+        .message.user .msg-avatar { background: #f9a825; color: white; }
+
+        .message .msg-content {
+            background: #f5f5f5;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            position: relative;
+        }
+        .message.bot .msg-content { border-top-left-radius: 4px; }
+        .message.user .msg-content { background: #1a73e8; color: white; border-top-right-radius: 4px; }
+
+        .verification-bar {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #2e7d32;
+        }
+        .verification-bar .title { font-weight: bold; margin-bottom: 4px; }
+        .verification-bar .check-item { margin-left: 12px; }
+
+        .chat-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-row input:focus { border-color: #1a73e8; }
+        .input-row button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .input-row button:hover { background: #1557b0; }
+        .input-row button:disabled { background: #bbb; cursor: not-allowed; }
+
+        /* 右侧流程面板 */
+        .flow-panel {
+            width: 280px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .flow-header {
+            padding: 16px;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+        .flow-header h3 { font-size: 14px; color: #1a73e8; }
+
+        .flow-steps {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .flow-step {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 32px;
+            bottom: -8px;
+            width: 2px;
+            background: #e0e0e0;
+        }
+        .flow-step:last-child::before { display: none; }
+
+        .step-num {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: #e8eaf6;
+            color: #1a73e8;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+        .flow-step.active .step-num {
+            background: #1a73e8;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(26,115,232,0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(26,115,232,0); }
+        }
+        .flow-step.done .step-num {
+            background: #34a853;
+            color: white;
+        }
+
+        .step-content h4 { font-size: 13px; margin-bottom: 2px; }
+        .step-content p { font-size: 12px; color: #888; line-height: 1.4; }
+        .flow-step.active .step-content h4 { color: #1a73e8; }
+        .flow-step.done .step-content h4 { color: #34a853; }
+
+        /* 日志区域 */
+        .log-area {
+            padding: 12px;
+            border-top: 1px solid #e8e8e8;
+            background: #fafafa;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .log-area h4 { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .log-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 11px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #555;
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        .log-entry { margin-bottom: 4px; }
+        .log-entry .time { color: #aaa; }
+        .log-entry.info { color: #1a73e8; }
+        .log-entry.success { color: #34a853; }
+        .log-entry.warn { color: #f9a825; }
+
+        /* 隐私设置 */
+        .privacy-section {
+            padding: 12px;
+            border-top: 1px solid #e8e8e8;
+        }
+        .privacy-section h4 { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .privacy-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+        .toggle-switch {
+            width: 36px; height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-switch.on { background: #1a73e8; }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px; height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: left 0.3s;
+        }
+        .toggle-switch.on::after { left: 18px; }
+
+        /* 提示框 */
+        .toast {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* 演示按钮 */
+        .demo-controls {
+            padding: 12px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .demo-btn {
+            background: #e8eaf6;
+            border: 1px solid #c5cae9;
+            color: #1a73e8;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .demo-btn:hover { background: #c5cae9; }
+
+        /* 快捷场景按钮 */
+        .quick-scenarios {
+            padding: 12px;
+            border-top: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+        .quick-scenarios h4 { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .scenario-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .scenario-btn {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            color: #1565c0;
+            padding: 5px 10px;
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scenario-btn:hover { background: #bbdefb; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">理</div>
+        <div>
+            <h1>连小理·专属记忆体</h1>
+            <div class="subtitle">面向新生个性化AI交互的持久记忆与强制校验机制</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <span class="badge"><span class="status-dot"></span>记忆体已激活</span>
+        <span class="badge">2026级本科生</span>
+    </div>
+</div>
+
+<div class="main">
+    <!-- 左侧：记忆体数据库 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>我的专属记忆库</h3>
+            <p>为每位用户独立存储的个性化数据库</p>
+        </div>
+        <div class="memory-content">
+            <div class="memory-section">
+                <div class="memory-section-title">基本信息</div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">身份</div>
+                        <div class="value">2026级本科新生</div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">学域</div>
+                        <div class="value">工科（计算机相关）</div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">入学时间</div>
+                        <div class="value">2026年9月</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memory-section">
+                <div class="memory-section-title">学习偏好</div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">回答风格</div>
+                        <div class="value">偏好平实、直接的表达方式，不喜欢过多类比</div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">格式要求</div>
+                        <div class="value">复杂信息偏好表格呈现，简洁信息可用列表</div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">必含要素</div>
+                        <div class="value">每次回答需附具体例子和实操步骤</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memory-section">
+                <div class="memory-section-title">历史约束</div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">禁忌</div>
+                        <div class="value">不使用专业术语缩写（如不用API而用接口）</div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <span class="icon"><b>&#9679;</b></span>
+                    <div class="text">
+                        <div class="label">活跃时段</div>
+                        <div class="value">通常在晚上20:00-23:00使用</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memory-section">
+                <div class="memory-section-title">隐私设置</div>
+                <div class="privacy-section" style="padding:0;">
+                    <div class="privacy-toggle">
+                        <span>仅本人可见（默认）</span>
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                    <div class="privacy-toggle">
+                        <span>对系统可见以优化体验</span>
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                    <div class="privacy-toggle">
+                        <span>对指定人员可见</span>
+                        <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="memory-stats">
+            <div class="stat-box">
+                <div class="num" id="memCount">7</div>
+                <div class="lbl">记忆条目</div>
+            </div>
+            <div class="stat-box">
+                <div class="num">98%</div>
+                <div class="lbl">校验通过率</div>
+            </div>
+        </div>
+        <div class="demo-controls">
+            <button class="demo-btn" onclick="resetDemo()">重置演示</button>
+            <button class="demo-btn" onclick="addMemory()">添加记忆</button>
+            <button class="demo-btn" onclick="clearMemory()">清空记忆</button>
+        </div>
+    </div>
+
+    <!-- 中间：聊天区域 -->
+    <div class="chat-area">
+        <div class="chat-header">
+            <div class="avatar">理</div>
+            <div class="info">
+                <h4>连小理 AI学伴</h4>
+                <span>在线 - 记忆体已加载</span>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="msg-avatar">理</div>
+                <div class="msg-content">
+                    你好！我是连小理，你的AI学伴。我已经加载了你的专属记忆库，会记住你的偏好和需求，为你提供个性化的帮助。有什么可以帮你的吗？
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <div class="input-row">
+                <input type="text" id="userInput" placeholder="输入消息...（试试下方的快捷场景按钮）" onkeypress="if(event.key==='Enter')sendMessage()">
+                <button id="sendBtn" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+        <div class="quick-scenarios">
+            <h4>快捷演示场景（点击即可体验）</h4>
+            <div class="scenario-btns">
+                <button class="scenario-btn" onclick="runScenario('high_math')">帮我复习高数第三章</button>
+                <button class="scenario-btn" onclick="runScenario('thesis')">毕业论文格式要求</button>
+                <button class="scenario-btn" onclick="runScenario('add_pref')">添加新偏好</button>
+                <button class="scenario-btn" onclick="runScenario('gap_detect')">提问不完整试试</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧：流程面板 -->
+    <div class="flow-panel">
+        <div class="flow-header">
+            <h3>处理流程</h3>
+        </div>
+        <div class="flow-steps">
+            <div class="flow-step active" id="step1">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h4>发起需求</h4>
+                    <p>用户提问，系统自动加载用户专属记忆体数据库</p>
+                </div>
+            </div>
+            <div class="flow-step" id="step2">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h4>缺口检测</h4>
+                    <p>比对当前问题与数据库需求模式，判断信息是否充足</p>
+                </div>
+            </div>
+            <div class="flow-step" id="step3">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h4>生成草稿</h4>
+                    <p>组合用户问题+数据库约束+本次细则+对话上下文生成初稿</p>
+                </div>
+            </div>
+            <div class="flow-step" id="step4">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                    <h4>逐项校验</h4>
+                    <p>构建校验清单，逐条检查草稿，未通过则重新生成</p>
+                </div>
+            </div>
+            <div class="flow-step" id="step5">
+                <div class="step-num">5</div>
+                <div class="step-content">
+                    <h4>结果反馈</h4>
+                    <p>输出回答，末尾附已执行约束清单供用户确认</p>
+                </div>
+            </div>
+            <div class="flow-step" id="step6">
+                <div class="step-num">6</div>
+                <div class="step-content">
+                    <h4>用户确认与更新</h4>
+                    <p>用户确认或纠正，新偏好可写入数据库</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-area">
+            <h4>系统日志</h4>
+            <div class="log-content" id="logContent">
+                <div class="log-entry"><span class="time">[系统]</span> 记忆体初始化完成</div>
+                <div class="log-entry success"><span class="time">[系统]</span> 已加载 7 条用户记忆</div>
+                <div class="log-entry info"><span class="time">[系统]</span> 等待用户输入...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // 预设的对话场景
+    const scenarios = {
+        'high_math': {
+            user: '帮我复习高数第三章的内容',
+            bot: '根据你的记忆库，你偏好平实直接的表达，且需要具体例子。让我为你整理高数第三章的核心知识点。\n\n【极限与连续】\n极限是微积分的基础概念。简单来说，当自变量x无限接近某个值x0时，函数f(x)无限接近确定值A，则称A为f(x)当x趋于x0时的极限。\n\n【重要定理】\n1. 夹逼准则：若g(x)<=f(x)<=h(x)，且g(x)和h(x)极限相同，则f(x)极限也相同。\n2. 单调有界定理：单调有界数列必有极限。\n\n【典型例题】\n求 lim(x->0) sin(x)/x = 1\n解法：利用重要极限公式，直接得出结果为1。\n\n本次回答已遵循你的偏好：平实表达、含具体例子、无专业术语缩写。',
+            verification: ['平实表达（无过多类比）', '包含具体例子', '包含实操步骤', '无禁忌词（无API等缩写）'],
+            logs: [
+                { type: 'info', text: '[步骤1] 加载用户记忆库... 7条记录已加载' },
+                { type: 'info', text: '[步骤2] 缺口检测：用户未指定教材版本，但历史记录中有偏好，推断使用同济版' },
+                { type: 'success', text: '[步骤2] 缺口推断完成，已自动补充教材信息' },
+                { type: 'info', text: '[步骤3] 组合上下文生成草稿...' },
+                { type: 'info', text: '[步骤4] 构建校验清单（4项）...' },
+                { type: 'success', text: '[步骤4] 全部校验通过' },
+                { type: 'info', text: '[步骤5] 输出回答+约束清单' },
+            ]
+        },
+        'thesis': {
+            user: '毕业论文的格式要求是什么？',
+            bot: '根据你的记忆库，你偏好表格形式呈现复杂信息。以下是毕业论文格式要求：\n\n| 项目 | 要求 |\n|------|------|\n| 字体 | 正文宋体小四，标题黑体三号 |\n| 行距 | 1.5倍行距 |\n| 页边距 | 上2.54cm 下2.54cm 左3.17cm 右3.17cm |\n| 页码 | 页脚居中，罗马数字+阿拉伯数字 |\n\n需要我详细说明某个部分吗？',
+            verification: ['表格格式呈现', '平实表达', '无禁忌词', '包含具体数据'],
+            logs: [
+                { type: 'info', text: '[步骤1] 加载用户记忆库... 7条记录已加载' },
+                { type: 'info', text: '[步骤2] 缺口检测：问题较宽泛，但用户历史偏好"要具体"，直接给出完整格式表' },
+                { type: 'success', text: '[步骤2] 信息充足，进入生成' },
+                { type: 'info', text: '[步骤3] 组合上下文生成草稿（含表格）...' },
+                { type: 'info', text: '[步骤4] 构建校验清单（4项）...' },
+                { type: 'success', text: '[步骤4] 全部校验通过' },
+                { type: 'info', text: '[步骤5] 输出回答+约束清单' },
+            ]
+        },
+        'add_pref': {
+            user: '另外，我希望你以后回答都控制在500字以内',
+            bot: '好的，我已经将你的新偏好记录到记忆库中：\n\n新增约束：回答控制在500字以内\n\n现在你的记忆库共有8条记录。这个偏好将在后续所有对话中生效。',
+            verification: null,
+            logs: [
+                { type: 'info', text: '[步骤1] 加载用户记忆库... 7条记录已加载' },
+                { type: 'info', text: '[步骤2] 缺口检测：用户提出新需求，识别为"偏好更新"指令' },
+                { type: 'warn', text: '[步骤6] 检测到新约束，询问是否写入记忆库...' },
+                { type: 'success', text: '[步骤6] 用户确认，已将"回答<=500字"写入记忆库' },
+                { type: 'info', text: '[系统] 记忆库已更新：8条记录' },
+            ]
+        },
+        'gap_detect': {
+            user: '高数怎么做',
+            bot: '我注意到你的问题比较笼统。根据你的记忆库，你通常关注具体的章节内容。请问你想复习哪一章的内容呢？比如：\n- 极限与连续\n- 导数与微分\n- 不定积分\n- 定积分及其应用\n\n另外，你之前提到偏好平实表达并需要具体例子，我还会继续按照这个偏好来回答。',
+            verification: ['平实表达', '主动追问缺口', '参考历史偏好'],
+            logs: [
+                { type: 'info', text: '[步骤1] 加载用户记忆库... 7条记录已加载' },
+                { type: 'info', text: '[步骤2] 缺口检测：问题"高数怎么做"过于宽泛' },
+                { type: 'warn', text: '[步骤2] 检测到信息缺口，触发缺口推断机制' },
+                { type: 'success', text: '[步骤2] 根据历史偏好，用户关注具体章节，主动追问' },
+                { type: 'info', text: '[步骤5] 输出追问+约束清单' },
+            ]
+        }
+    };
+
+    function addLog(type, text) {
+        const logContent = document.getElementById('logContent');
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+        const entry = document.createElement('div');
+        entry.className = 'log-entry ' + type;
+        entry.innerHTML = '<span class="time">[' + timeStr + ']</span> ' + text;
+        logContent.appendChild(entry);
+        logContent.scrollTop = logContent.scrollHeight;
+    }
+
+    function setActiveStep(stepNum) {
+        for (let i = 1; i <= 6; i++) {
+            const el = document.getElementById('step' + i);
+            el.classList.remove('active', 'done');
+            if (i < stepNum) el.classList.add('done');
+            if (i === stepNum) el.classList.add('active');
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(function() { toast.classList.remove('show'); }, 2500);
+    }
+
+    function addMessage(content, isUser, verification) {
+        const chatMessages = document.getElementById('chatMessages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + (isUser ? 'user' : 'bot');
+
+        let verificationHtml = '';
+        if (verification && !isUser) {
+            verificationHtml = '<div class="verification-bar">' +
+                '<div class="title">本次已执行约束：</div>' +
+                verification.map(function(v) { return '<div class="check-item">' + v + '</div>'; }).join('') +
+                '</div>';
+        }
+
+        msgDiv.innerHTML = '<div class="msg-avatar">' + (isUser ? '我' : '理') + '</div>' +
+            '<div class="msg-content">' +
+            content.replace(/\n/g, '<br>') +
+            verificationHtml +
+            '</div>';
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function runScenario(key) {
+        const scenario = scenarios[key];
+        if (!scenario) return;
+
+        document.getElementById('sendBtn').disabled = true;
+        document.getElementById('userInput').disabled = true;
+
+        addMessage(scenario.user, true);
+        addLog('info', '[用户] ' + scenario.user);
+
+        let step = 1;
+        const stepInterval = setInterval(function() {
+            setActiveStep(step);
+            step++;
+            if (step > 6) {
+                clearInterval(stepInterval);
+            }
+        }, 600);
+
+        scenario.logs.forEach(function(log, idx) {
+            setTimeout(function() {
+                addLog(log.type, log.text);
+            }, 800 + idx * 500);
+        });
+
+        setTimeout(function() {
+            addMessage(scenario.bot, false, scenario.verification);
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('userInput').disabled = false;
+            document.getElementById('userInput').focus();
+            addLog('success', '[完成] 回答已生成');
+        }, 800 + scenario.logs.length * 500 + 300);
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // 通用回复路径
+        addMessage(text, true);
+        addLog('info', '[用户] ' + text);
+
+        setTimeout(function() {
+            setActiveStep(1);
+            addLog('info', '[步骤1] 加载用户记忆库...');
+
+            setTimeout(function() {
+                setActiveStep(2);
+                addLog('info', '[步骤2] 缺口检测：分析用户需求...');
+
+                setTimeout(function() {
+                    setActiveStep(3);
+                    addLog('info', '[步骤3] 组合上下文生成草稿...');
+
+                    setTimeout(function() {
+                        setActiveStep(4);
+                        addLog('info', '[步骤4] 构建校验清单并逐条检查...');
+
+                        setTimeout(function() {
+                            setActiveStep(5);
+                            addLog('success', '[步骤4] 全部校验通过');
+
+                            setTimeout(function() {
+                                setActiveStep(6);
+                                addLog('info', '[步骤5] 输出回答+约束清单');
+
+                                setTimeout(function() {
+                                    addMessage(
+                                        '根据你的偏好，我为你整理了以下内容：\n\n关于"' + text + '"——这是一个演示回复。在实际产品中，这里会显示基于你的记忆库生成的个性化回答。\n\n提示：试试页面下方的快捷演示场景按钮，体验更完整的流程。',
+                                        false,
+                                        ['平实表达', '包含具体例子', '无禁忌词', '字数可控']
+                                    );
+                                    document.getElementById('sendBtn').disabled = false;
+                                    document.getElementById('userInput').disabled = false;
+                                    addLog('success', '[完成] 回答已生成');
+                                }, 500);
+                            }, 400);
+                        }, 600);
+                    }, 500);
+                }, 500);
+            }, 400);
+        }, 300);
+
+        input.value = '';
+    }
+
+    function resetDemo() {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.innerHTML = '<div class="message bot">' +
+            '<div class="msg-avatar">理</div>' +
+            '<div class="msg-content">你好！我是连小理，你的AI学伴。我已经加载了你的专属记忆库，会记住你的偏好和需求，为你提供个性化的帮助。有什么可以帮你的吗？</div>' +
+            '</div>';
+        document.getElementById('logContent').innerHTML = '<div class="log-entry"><span class="time">[系统]</span> 记忆体初始化完成</div>' +
+            '<div class="log-entry success"><span class="time">[系统]</span> 已加载 7 条用户记忆</div>' +
+            '<div class="log-entry info"><span class="time">[系统]</span> 等待用户输入...</div>';
+        setActiveStep(1);
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('userInput').disabled = false;
+        document.getElementById('userInput').value = '';
+        showToast('演示已重置');
+    }
+
+    function addMemory() {
+        const memCount = document.getElementById('memCount');
+        let count = parseInt(memCount.textContent);
+        count++;
+        memCount.textContent = count;
+
+        const memoryContent = document.querySelector('.memory-content');
+        const lastSection = document.querySelectorAll('.memory-section')[2];
+        const newItem = document.createElement('div');
+        newItem.className = 'memory-item';
+        newItem.innerHTML = '<span class="icon"><b>&#9679;</b></span>' +
+            '<div class="text">' +
+            '<div class="label">新增条目</div>' +
+            '<div class="value">第' + count + '条记忆（演示）</div>' +
+            '</div>';
+        lastSection.appendChild(newItem);
+
+        addLog('success', '[系统] 新增记忆条目，当前共' + count + '条');
+        showToast('已添加第' + count + '条记忆');
+    }
+
+    function clearMemory() {
+        if (confirm('确定要清空所有记忆吗？此操作不可撤销。')) {
+            const memCount = document.getElementById('memCount');
+            memCount.textContent = '0';
+
+            const items = document.querySelectorAll('.memory-item');
+            items.forEach(function(item) { item.remove(); });
+
+            addLog('warn', '[系统] 用户一键清空记忆库');
+            showToast('记忆库已清空');
+        }
+    }
+
+    // 初始化
+    document.getElementById('userInput').focus();
+</script>
+
+</body>
+</html>
